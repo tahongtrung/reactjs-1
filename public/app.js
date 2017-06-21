@@ -1,69 +1,107 @@
-function getName(name){
-	alert(name);
+var list;
+function addDiv(){
+	ReactDOM.render(
+		<InputDiv/>,
+		document.getElementById("div-add")
+	);
 }
 
-//Khởi tạo component
-var Tname = React.createClass({
-	addStudent:function(){
-		this.state.tongHV = parseInt(this.state.tongHV)+1;
-		this.setState(this.state);
+var Note = React.createClass({
+	cancel(){
+		this.setState({onEdit:false});
 	},
-	layThongTin:function(){
-		alert(this.props.children);
+	save(){
+		var note = this;
+		$.post("/edit",{idEdit:this.props.id,noidung:this.refs.edit.value},function(data){
+			list.setState({mang:data});
+			note.setState({onEdit:false});
+		});
+	},
+	edit(){
+		this.setState({onEdit:true});
 	},
 	getInitialState(){
-		return{
-			tongHV:this.props.tongHV
-		};
+		return {onEdit:false}
+	},
+	delete(){
+		$.post("/delete",{iddel:this.props.id},function(data){
+			list.setState({mang:data});
+		});
 	},
 	render:function(){
-		return(
-			<div>
-				<h1 className="yellow">{this.props.ten}-{this.props.gv}</h1> 
-				<div>So HV:{this.state.tongHV}</div>
-				<p>{this.props.children}</p>
-				<button onClick={()=>{var str=this.props.ten+this.props.gv;getName(str)}}>Thong Tin</button>	
-				<button onClick={this.addStudent}>addStudent</button>				
-			</div>
-		);
+		if(this.state.onEdit){
+			return(
+				<div className="div-note">
+					<input defaultValue={this.props.children} ref="edit" /><hr/>
+					<button className="" onClick={this.cancel}>Cancel</button>|
+					<button className="" onClick={this.save}>Save</button>
+				</div>
+			)
+		}else{
+			return(
+				<div className="div-note">
+					<p>{this.props.children}</p>
+					<button className="" onClick={this.delete}>Del</button>|
+					<button className="" onClick={this.edit}>Edit</button>
+				</div>
+			) 
+		}
+		
 	}
 });
 
-// var Khoahoc = React.createClass({
-// 	render:function(){
-// 		return(
-// 			<h3>Lap Trinh ReacJS</h3>
-// 		);
-// 	}
-// })
-var InputTag = React.createClass(
-	{
-		show(){
-			var text=this.refs.sl.value;
-			alert(text);
-		},
-		render(){
-			return(
-				<div>
-					<select ref="sl">
-						<option value="a">AAA</option>
-						<option value="b">BBB</option>
-						<option value="c">CCC</option>
-					</select>
-					<input type="text" ref="txt"/>
-					<button onClick={this.show}>Hien Thi</button>
-				</div>
-			)
-		}
+var List = React.createClass({
+	getInitialState(){
+		list = this;
+		return {mang:[]}
+	},
+	render(){
+		return(
+			<div className="div-list">
+				<div id="div-add"></div>
+				<button onClick={addDiv}>Add</button>
+				{
+					this.state.mang.map(function(note,index){
+						return <Note key={index} id={index}>{note}</Note>
+					})
+				}
+			</div>
+		)
+	},
+	componentDidMount(){
+		var that = this;
+		$.post("/getNotes",function(data){
+			that.setState({mang:data});
+		});
 	}
-)
 
+});
+var InputDiv = React.createClass({
+	send(){
+
+		//list.setState({mang:list.state.mang.concat(this.refs.txt.value)});
+		$.post("/add",{note:this.refs.txt.value},function(data){
+			list.setState({mang:data});
+		});
+		this.refs.txt.value="";
+	},
+	cancel(){
+		ReactDOM.unmountComponentAtNode(document.getElementById('div-add'));
+	},
+	render(){
+		return(
+			<div>
+				<input type="txt" ref="txt" placeholder="enter your note" />
+				<br/><br/>
+				<button onClick={this.send}>Send</button>|
+				<button onClick={this.cancel}>Cancel</button>
+				<hr/>
+			</div>
+		)
+	}
+});
 ReactDOM.render(
-	<div>
-		<InputTag/>
-		<Tname ten="ReactJS" gv="MR.Khoa" tongHV="10">TrungML</Tname>
-		<Tname ten="ReactJS" gv="MR.Khoa" tongHV="10">Nodejs</Tname>
-	</div>
+	<List/>
     ,document.getElementById("root")
 );
 
